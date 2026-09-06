@@ -388,7 +388,7 @@ router.get("/overview", protect, async (req, res) => {
       },
     });
 
-  } catch (error) {
+    } catch (error) {
     console.error(
       "Get dashboard overview error:",
       error
@@ -397,6 +397,7 @@ router.get("/overview", protect, async (req, res) => {
     res.status(500).json({
       success: false,
       message:
+        error.message ||
         "Failed to retrieve dashboard data.",
     });
   }
@@ -943,7 +944,7 @@ router.get(
         },
       });
 
-    } catch (error) {
+        } catch (error) {
       console.error(
         "Get dashboard analytics error:",
         error
@@ -952,6 +953,7 @@ router.get(
       res.status(500).json({
         success: false,
         message:
+          error.message ||
           "Failed to retrieve dashboard analytics.",
       });
     }
@@ -1224,7 +1226,7 @@ router.get(
         },
       });
 
-    } catch (error) {
+        } catch (error) {
       console.error(
         "Get performance trends error:",
         error
@@ -1233,6 +1235,7 @@ router.get(
       res.status(500).json({
         success: false,
         message:
+          error.message ||
           "Failed to retrieve performance trends.",
       });
     }
@@ -1301,7 +1304,7 @@ router.get(
         data: result.rows,
       });
 
-    } catch (error) {
+        } catch (error) {
       console.error(
         "Get mock exam history error:",
         error
@@ -1310,6 +1313,7 @@ router.get(
       res.status(500).json({
         success: false,
         message:
+          error.message ||
           "Failed to retrieve mock exam history.",
       });
     }
@@ -1444,7 +1448,7 @@ router.get(
         data: result.rows,
       });
 
-    } catch (error) {
+        } catch (error) {
       console.error(
         "Get history error:",
         error
@@ -1453,6 +1457,7 @@ router.get(
       res.status(500).json({
         success: false,
         message:
+          error.message ||
           "Failed to retrieve history.",
       });
     }
@@ -1611,7 +1616,7 @@ router.get(
         },
       });
 
-    } catch (error) {
+        } catch (error) {
       console.error(
         "Get mock exam result details error:",
         error
@@ -1620,6 +1625,7 @@ router.get(
       res.status(500).json({
         success: false,
         message:
+          error.message ||
           "Failed to retrieve mock exam result.",
       });
     }
