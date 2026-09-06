@@ -30,30 +30,22 @@ export function AuthProvider({ children }) {
       try {
         const response = await api.get("/profile");
 
-        /*
-          Backend currently returns:
+        const responseData = response.data;
 
-          {
-            success: true,
-            user: {...}
-          }
-
-          Support both:
-          response.data.data.user
-          and
-          response.data.user
-        */
-
-        const responseBody = response.data;
+        // Backend returns:
+        // {
+        //   success: true,
+        //   user: {...}
+        // }
 
         const savedUser =
-          responseBody?.data?.user ||
-          responseBody?.user ||
-          responseBody?.data;
+          responseData?.user ||
+          responseData?.data?.user ||
+          responseData?.data;
 
         if (!savedUser) {
           throw new Error(
-            "Authenticated user data was not returned."
+            "User information was not returned."
           );
         }
 
@@ -94,7 +86,7 @@ export function AuthProvider({ children }) {
     );
 
     /*
-      Backend currently returns:
+      Backend returns:
 
       {
         success: true,
@@ -102,26 +94,23 @@ export function AuthProvider({ children }) {
         token: "...",
         user: {...}
       }
-
-      Support both the current backend format
-      and a nested data format.
     */
 
-    const responseBody = response.data;
+    const responseData = response.data;
 
     const data =
-      responseBody?.data || responseBody;
+      responseData?.data || responseData;
 
     const token = data?.token;
-
     const loggedInUser = data?.user;
 
     if (!token || !loggedInUser) {
       throw new Error(
-        "Login succeeded, but authentication data was not returned."
+        "Login succeeded but authentication data was not returned."
       );
     }
 
+    // Save authentication data
     localStorage.setItem(
       "token",
       token
@@ -156,7 +145,7 @@ export function AuthProvider({ children }) {
     );
 
     /*
-      Backend currently returns:
+      Backend returns:
 
       {
         success: true,
@@ -164,26 +153,23 @@ export function AuthProvider({ children }) {
         token: "...",
         user: {...}
       }
-
-      Support both the current backend format
-      and a nested data format.
     */
 
-    const responseBody = response.data;
+    const responseData = response.data;
 
     const data =
-      responseBody?.data || responseBody;
+      responseData?.data || responseData;
 
     const token = data?.token;
-
     const registeredUser = data?.user;
 
     if (!token || !registeredUser) {
       throw new Error(
-        "Registration succeeded, but authentication data was not returned."
+        "Registration succeeded but authentication data was not returned."
       );
     }
 
+    // Save authentication data
     localStorage.setItem(
       "token",
       token
@@ -194,6 +180,7 @@ export function AuthProvider({ children }) {
       JSON.stringify(registeredUser)
     );
 
+    // Immediately authenticate the user
     setUser(registeredUser);
 
     return response;
@@ -221,10 +208,7 @@ export function AuthProvider({ children }) {
         ...updatedUser,
       }));
 
-      /*
-        Keep the saved user synchronized.
-      */
-
+      // Keep localStorage synchronized
       const savedUser =
         localStorage.getItem("user");
 
@@ -242,7 +226,7 @@ export function AuthProvider({ children }) {
           );
         } catch (error) {
           console.error(
-            "Update saved user error:",
+            "Failed to update saved user:",
             error
           );
         }
