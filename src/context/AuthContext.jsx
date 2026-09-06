@@ -30,7 +30,34 @@ export function AuthProvider({ children }) {
       try {
         const response = await api.get("/profile");
 
-        setUser(response.data.data);
+        /*
+          Backend currently returns:
+
+          {
+            success: true,
+            user: {...}
+          }
+
+          Support both:
+          response.data.data.user
+          and
+          response.data.user
+        */
+
+        const responseBody = response.data;
+
+        const savedUser =
+          responseBody?.data?.user ||
+          responseBody?.user ||
+          responseBody?.data;
+
+        if (!savedUser) {
+          throw new Error(
+            "Authenticated user data was not returned."
+          );
+        }
+
+        setUser(savedUser);
       } catch (error) {
         console.error(
           "Load authenticated user error:",
@@ -42,6 +69,7 @@ export function AuthProvider({ children }) {
           error.response?.status === 403
         ) {
           localStorage.removeItem("token");
+          localStorage.removeItem("user");
           setUser(null);
         }
       } finally {
@@ -57,16 +85,54 @@ export function AuthProvider({ children }) {
   // ========================================
 
   const login = async (email, password) => {
-    const response = await api.post("/auth/login", {
-      email,
-      password,
-    });
+    const response = await api.post(
+      "/auth/login",
+      {
+        email: email.trim(),
+        password,
+      }
+    );
 
-    const data = response.data.data;
+    /*
+      Backend currently returns:
 
-    localStorage.setItem("token", data.token);
+      {
+        success: true,
+        message: "Login successful.",
+        token: "...",
+        user: {...}
+      }
 
-    setUser(data.user);
+      Support both the current backend format
+      and a nested data format.
+    */
+
+    const responseBody = response.data;
+
+    const data =
+      responseBody?.data || responseBody;
+
+    const token = data?.token;
+
+    const loggedInUser = data?.user;
+
+    if (!token || !loggedInUser) {
+      throw new Error(
+        "Login succeeded, but authentication data was not returned."
+      );
+    }
+
+    localStorage.setItem(
+      "token",
+      token
+    );
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify(loggedInUser)
+    );
+
+    setUser(loggedInUser);
 
     return response;
   };
@@ -83,17 +149,52 @@ export function AuthProvider({ children }) {
     const response = await api.post(
       "/auth/register",
       {
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim(),
         password,
       }
     );
 
-    const data = response.data.data;
+    /*
+      Backend currently returns:
 
-    localStorage.setItem("token", data.token);
+      {
+        success: true,
+        message: "Account created successfully.",
+        token: "...",
+        user: {...}
+      }
 
-    setUser(data.user);
+      Support both the current backend format
+      and a nested data format.
+    */
+
+    const responseBody = response.data;
+
+    const data =
+      responseBody?.data || responseBody;
+
+    const token = data?.token;
+
+    const registeredUser = data?.user;
+
+    if (!token || !registeredUser) {
+      throw new Error(
+        "Registration succeeded, but authentication data was not returned."
+      );
+    }
+
+    localStorage.setItem(
+      "token",
+      token
+    );
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify(registeredUser)
+    );
+
+    setUser(registeredUser);
 
     return response;
   };
@@ -104,14 +205,14 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
     setUser(null);
   };
 
   // ========================================
   // UPDATE USER
   // ========================================
-  // useCallback keeps the function reference
-  // stable between renders.
 
   const updateUser = useCallback(
     (updatedUser) => {
@@ -119,9 +220,40 @@ export function AuthProvider({ children }) {
         ...previous,
         ...updatedUser,
       }));
+
+      /*
+        Keep the saved user synchronized.
+      */
+
+      const savedUser =
+        localStorage.getItem("user");
+
+      if (savedUser) {
+        try {
+          const parsedUser =
+            JSON.parse(savedUser);
+
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              ...parsedUser,
+              ...updatedUser,
+            })
+          );
+        } catch (error) {
+          console.error(
+            "Update saved user error:",
+            error
+          );
+        }
+      }
     },
     []
   );
+
+  // ========================================
+  // AUTH PROVIDER
+  // ========================================
 
   return (
     <AuthContext.Provider
@@ -144,7 +276,8 @@ export function AuthProvider({ children }) {
 // ========================================
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context =
+    useContext(AuthContext);
 
   if (!context) {
     throw new Error(
