@@ -12,14 +12,10 @@ const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
 
-  // Prevent Render from hanging indefinitely
-  // when PostgreSQL cannot be reached.
   connectionTimeoutMillis: 10000,
 
-  // Keep idle connections healthy.
   idleTimeoutMillis: 30000,
 
-  // Render PostgreSQL uses SSL in production.
   ssl: isProduction
     ? {
         rejectUnauthorized: false,
@@ -34,7 +30,7 @@ pool.on("connect", () => {
 pool.on("error", (error) => {
   console.error(
     "Unexpected PostgreSQL error:",
-    error
+    error.message
   );
 });
 
