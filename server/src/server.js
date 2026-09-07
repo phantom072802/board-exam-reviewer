@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const app = require("./app");
 const pool = require("./config/database");
+const { runMigrations } = require("./config/runMigrations");
 
 const PORT = Number(process.env.PORT) || 5000;
 const HOST = "0.0.0.0";
@@ -10,24 +11,38 @@ const HOST = "0.0.0.0";
 // START SERVER
 // ==================================================
 
-const server = app.listen(
-  PORT,
-  HOST,
-  () => {
-    console.log(
-      `Server running on http://${HOST}:${PORT}`
-    );
+let server;
 
-    console.log(
-      `Environment: ${
-        process.env.NODE_ENV || "development"
-      }`
-    );
+async function startServer() {
+  try {
+    await runMigrations();
 
-    // Test database after the server is listening.
-    testDatabaseConnection();
+    server = app.listen(
+      PORT,
+      HOST,
+      () => {
+        console.log(
+          `Server running on http://${HOST}:${PORT}`
+        );
+
+        console.log(
+          `Environment: ${
+            process.env.NODE_ENV || "development"
+          }`
+        );
+
+        // Test database after the server is listening.
+        testDatabaseConnection();
+      }
+    );
+  } catch (error) {
+    console.error("Database migration failed:", error.message);
+    await pool.end();
+    process.exit(1);
   }
-);
+}
+
+startServer();
 
 // ==================================================
 // TEST DATABASE
