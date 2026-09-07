@@ -4,6 +4,21 @@ const pool = require("./database");
 // migration is deliberately idempotent so every Render restart can safely run
 // it and existing production data is never replaced.
 const dashboardTablesMigration = `
+  CREATE TABLE IF NOT EXISTS study_goals (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    target_questions INTEGER NOT NULL CHECK (target_questions > 0),
+    target_accuracy NUMERIC(5, 2) NOT NULL DEFAULT 0
+      CHECK (target_accuracy >= 0 AND target_accuracy <= 100),
+    start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    end_date DATE,
+    status VARCHAR(20) NOT NULL DEFAULT 'active'
+      CHECK (status IN ('active', 'completed', 'cancelled')),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (end_date IS NULL OR end_date >= start_date)
+  );
+
   CREATE TABLE IF NOT EXISTS practice_sessions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -66,6 +81,8 @@ const dashboardTablesMigration = `
 
   CREATE INDEX IF NOT EXISTS idx_practice_sessions_user
     ON practice_sessions(user_id);
+  CREATE INDEX IF NOT EXISTS idx_study_goals_user_status
+    ON study_goals(user_id, status);
   CREATE INDEX IF NOT EXISTS idx_practice_answers_session
     ON practice_answers(session_id);
   CREATE INDEX IF NOT EXISTS idx_mock_exam_sessions_user
